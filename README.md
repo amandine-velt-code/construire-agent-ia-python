@@ -1,5 +1,14 @@
 # Construire un agent IA en Python — code source
 
+Code source des exemples du livre du même nom, à cloner pour suivre le
+livre chapitre par chapitre plutôt que retaper le code.
+
+Ce dépôt contient uniquement le code tel qu'il apparaît dans le
+livre — sans commentaire ni explication supplémentaire. Chaque ligne
+est expliquée dans le livre, chapitre par chapitre : pourquoi ce choix,
+ce qui peut casser, comment le déboguer. Ce dépôt sert à suivre le
+livre sans retaper le code, pas à le remplacer.
+
 | Chapitre | Fichiers |
 |---|---|
 | 2. Premier appel de fonction | 02-premier-appel.py, 02-premier-appel-fonction.py, 02-exercice-piste.py |
@@ -19,8 +28,6 @@
 | 17. Approbation humaine avant action irréversible | 17-reservation.py, 17-exercice-piste.py |
 | 18. Boucle de réflexion : l'agent qui se corrige | 18-reflexion.py, 18-exercice-piste.py, reflexion_agent.py |
 
-Code source des exemples du livre du même nom, à cloner pour suivre le
-livre chapitre par chapitre plutôt que retaper le code.
 
 Lien Amazon à venir — livre en cours de publication.
 
