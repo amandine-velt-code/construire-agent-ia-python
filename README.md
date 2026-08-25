@@ -22,11 +22,11 @@ livre sans retaper le code, pas à le remplacer.
 | 10. Réduire les coûts et le temps de réponse | 10-parallele.py, 10-exercice-piste.py |
 | 11. Observer un agent en production | 11-observer.py, 11-exercice-piste.py |
 | 12. Agents qui délèguent | 12-orchestrateur.py, 12-exercice-piste.py |
-| 14. Un outil branché sur une vraie API externe | 14-meteo.py, 14-exercice-piste.py |
-| 15. Sorties structurées et validées | 15-recapitulatif.py, 15-exercice-piste.py |
-| 16. Réponses en streaming | 16-streaming.py, 16-exercice-piste.py |
-| 17. Approbation humaine avant action irréversible | 17-reservation.py, 17-exercice-piste.py |
-| 18. Boucle de réflexion : l'agent qui se corrige | 18-reflexion.py, 18-exercice-piste.py, reflexion_agent.py |
+| 13. Un outil branché sur une vraie API externe | 13-meteo.py, 13-exercice-piste.py |
+| 14. Sorties structurées et validées | 14-recapitulatif.py, 14-exercice-piste.py |
+| 15. Réponses en streaming | 15-streaming.py, 15-exercice-piste.py |
+| 16. Approbation humaine avant action irréversible | 16-reservation.py, 16-exercice-piste.py |
+| 17. Boucle de réflexion : l'agent qui se corrige | 17-reflexion.py, 17-exercice-piste.py, reflexion_agent.py |
 
 
 Lien Amazon à venir — livre en cours de publication.

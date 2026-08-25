@@ -1,58 +1,44 @@
-"""Piste de l'exercice du chapitre 17 : tester le garde d'approbation.
+"""Piste de l'exercice du chapitre 17 : mesurer l'effet de la réflexion.
 
-Le pattern de test des agents à confirmation humaine, tel que documenté
-par la pratique : on ne mocke pas l'humain, on reprend la session avec une
-décision scriptée. Ici, le garde du chapitre est testé avec les trois
-décisions, enchaînées — sans clavier, sans modèle.
-"""
+Le chapitre 7 a construit un harnais d'évaluation par invariants ; celui-ci
+l'applique à la réflexion : plusieurs questions, et le bilan avant/après —
+la réflexion n'est pas présentée comme automatiquement meilleure, elle est
+mesurée."""
 
+from reflexion_agent import (
+    INVARIANTS,
+    boucle_agent,
+    corriger,
+    critiquer,
+    verifier_invariants,
+)
 
-def demander_confirmation(arguments, decisions):
-    """Le garde du chapitre 17, avec des décisions scriptées au lieu du clavier.
+QUESTIONS = [
+    "Je veux aller à Lyon le 25 août 2026. Donne-moi le prix du premier trajet du matin ET l'heure de ce trajet.",
+    "Je veux aller à Marseille le 26 août 2026. Donne-moi l'heure du dernier trajet et son prix.",
+]
 
-    Renvoie (decision, arguments_effectifs).
-    """
-    while decisions:
-        decision = decisions.pop(0)
-        if decision == "modifier":
-            arguments = dict(arguments, date=input_date_modifiee())
-            continue
-        return decision, arguments
-    return "non", arguments
+total_avant = 0
+total_apres = 0
 
+for question in QUESTIONS:
+    reponse, _ = boucle_agent(question)
+    score_initial = verifier_invariants(reponse)
+    total_avant += score_initial
+    if score_initial >= len(INVARIANTS):
+        print("Réponse complète d'emblée — pas de réflexion nécessaire.")
+        total_apres += score_initial
+        continue
+    critique = critiquer(reponse, question)
+    if critique.strip().upper() == "OK":
+        total_apres += score_initial
+        continue
+    corrigee = corriger(reponse, critique, question)
+    score = verifier_invariants(corrigee)
+    total_apres += max(score, score_initial)
+    print(f"Avant : {score_initial}/{len(INVARIANTS)} — après : {score}/{len(INVARIANTS)}")
 
-def input_date_modifiee():
-    return "2026-08-26"
-
-
-def test_oui():
-    decision, arguments = demander_confirmation(
-        {"destination": "Lyon", "date": "2026-08-25"}, ["oui"]
-    )
-    assert decision == "oui"
-    assert arguments["date"] == "2026-08-25"
-    print("oui → exécute tel quel :", arguments)
-
-
-def test_non():
-    decision, arguments = demander_confirmation(
-        {"destination": "Lyon", "date": "2026-08-25"}, ["non"]
-    )
-    assert decision == "non"
-    print("non → annule :", arguments)
-
-
-def test_modifier():
-    decision, arguments = demander_confirmation(
-        {"destination": "Lyon", "date": "2026-08-25"}, ["modifier", "oui"]
-    )
-    assert decision == "oui"
-    assert arguments["date"] == "2026-08-26"
-    print("modifier → nouvelle date confirmée :", arguments)
-
-
-if __name__ == "__main__":
-    test_oui()
-    test_non()
-    test_modifier()
-    print("Trois chemins du garde d'approbation vérifiés.")
+print(
+    f"Bilan : {total_avant} invariants sans réflexion, {total_apres} avec — "
+    f"sur {len(QUESTIONS) * len(INVARIANTS)} possibles"
+)

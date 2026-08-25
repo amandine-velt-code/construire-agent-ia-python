@@ -1,4 +1,4 @@
-"""La boucle de réflexion du chapitre 18, en module réutilisable : la boucle
+"""La boucle de réflexion du chapitre 17, en module réutilisable : la boucle
 du chapitre 3, la vérification par invariants (chapitre 7), la critique et
 la correction."""
 

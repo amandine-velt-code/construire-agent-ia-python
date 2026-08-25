@@ -1,16 +1,11 @@
-"""Piste de l'exercice du chapitre 14 : valider la sortie d'un vrai outil.
-
-L'outil météo du chapitre 13 renvoie du texte libre. Ici, il renvoie une
-structure validée par Pydantic — la validation attrape les champs absents
-d'une vraie API avant qu'ils ne polluent la conversation.
-"""
+"""Piste de l'exercice du chapitre 13 : une prévision à trois jours, en plus
+de la météo actuelle — le même outil, un autre paramètre de l'API."""
 
 import json
 import os
 
 import requests
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 
@@ -18,17 +13,8 @@ TIMEOUT_METEO = 10
 MAX_ITERATIONS = 5
 
 
-class Meteo(BaseModel):
-    """La forme validée du retour de l'outil météo."""
-
-    ville: str
-    temperature: float
-    description: str
-    vent_kmh: float | None = None
-
-
-def meteo_validee(destination):
-    """Météo actuelle d'une ville, renvoyée sous forme validée par Pydantic."""
+def meteo_prevision(destination):
+    """Températures prévues (max/min) des trois prochains jours d'une ville."""
     try:
         reponse = requests.get(
             "https://geocoding-api.open-meteo.com/v1/search",
@@ -46,63 +32,40 @@ def meteo_validee(destination):
             params={
                 "latitude": lieu["latitude"],
                 "longitude": lieu["longitude"],
-                "current": "temperature_2m,weather_code,wind_speed_10m",
+                "daily": "temperature_2m_max,temperature_2m_min",
+                "forecast_days": 3,
                 "timezone": "auto",
             },
             timeout=TIMEOUT_METEO,
         )
         reponse.raise_for_status()
-        actuel = reponse.json()["current"]
-        donnees = {
-            "ville": lieu["name"],
-            "temperature": actuel["temperature_2m"],
-            "description": traduire_meteo(actuel["weather_code"]),
-            "vent_kmh": actuel["wind_speed_10m"],
-        }
-        valide = Meteo(**donnees)
-        return json.dumps(valide.model_dump(), ensure_ascii=False)
+        quotidien = reponse.json()["daily"]
+        lignes = []
+        for date, maxi, mini in zip(
+            quotidien["time"], quotidien["temperature_2m_max"], quotidien["temperature_2m_min"]
+        ):
+            lignes.append(f"{date} : de {mini} à {maxi} °C")
+        return f"Prévision à {lieu['name']} : " + ", ".join(lignes)
     except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as e:
         return f"Erreur météo : {e}. Réessayez plus tard."
-    except ValidationError as e:
-        return f"Réponse de l'API invalide : {e}"
-
-
-def traduire_meteo(code):
-    """Traduit un code météo WMO en texte français (table simplifiée)."""
-    groupes = [
-        (0, "ciel dégagé"),
-        (1, "plutôt dégagé"),
-        (2, "partiellement nuageux"),
-        (3, "couvert"),
-        (45, "brouillard"),
-        (61, "pluie légère"),
-        (63, "pluie modérée"),
-        (65, "pluie forte"),
-        (80, "averses"),
-        (95, "orage"),
-    ]
-    for borne, texte in groupes:
-        if code <= borne:
-            return texte
-    return "temps inconnu"
 
 
 OUTILS = {
-    "meteo": meteo_validee,
+    "meteo_prevision": meteo_prevision,
 }
 
 DESCRIPTION_OUTILS = [
     {
         "type": "function",
         "function": {
-            "name": "meteo",
-            "description": "Météo actuelle d'une ville, via l'API Open-Meteo (gratuite et sans clé).",
+            "name": "meteo_prevision",
+            "description": "Prévision météo (températures min/max) des trois prochains jours d'une ville, via l'API Open-Meteo.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "destination": {
                         "type": "string",
-                        "description": "Ville dont on veut la météo.",
+                        "description": "Ville dont on veut la prévision.",
                     },
                 },
                 "required": ["destination"],
@@ -122,7 +85,7 @@ def executer_outil(nom, arguments):
 messages = [
     {
         "role": "user",
-        "content": "Quel temps fait-il à Marseille en ce moment ?",
+        "content": "Je pars à Marseille dans trois jours. Quel temps est-il prévu là-bas ?",
     }
 ]
 

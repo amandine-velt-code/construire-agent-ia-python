@@ -1,68 +1,58 @@
-"""Piste de l'exercice du chapitre 16 : mesurer la latence perçue.
+"""Piste de l'exercice du chapitre 16 : tester le garde d'approbation.
 
-Le script du chapitre affiche les mots au fil de l'eau ; celui-ci
-chronomètre le premier token (TTFT) et le temps total sur une question
-textuelle simple — la latence perçue, comparée à la latence réelle du
-chapitre 10."""
-
-import json
-import os
-import time
-
-import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-
-POINT_TERMINAISON = "https://openrouter.ai/api/v1/chat/completions"
+Le pattern de test des agents à confirmation humaine, tel que documenté
+par la pratique : on ne mocke pas l'humain, on reprend la session avec une
+décision scriptée. Ici, le garde du chapitre est testé avec les trois
+décisions, enchaînées — sans clavier, sans modèle.
+"""
 
 
-def appeler_modele_stream_chrono(messages):
-    """Comme le chapitre 16, avec chronométrage du premier token."""
-    debut = time.perf_counter()
-    premier_token = None
-    reponse = requests.post(
-        POINT_TERMINAISON,
-        headers={
-            "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "openrouter/free",
-            "messages": messages,
-            "stream": True,
-        },
-        timeout=120,
-        stream=True,
-    )
-    reponse.raise_for_status()
+def demander_confirmation(arguments, decisions):
+    """Le garde du chapitre 16, avec des décisions scriptées au lieu du clavier.
 
-    texte = ""
-    for ligne in reponse.iter_lines():
-        if not ligne or not ligne.startswith(b"data: "):
+    Renvoie (decision, arguments_effectifs).
+    """
+    while decisions:
+        decision = decisions.pop(0)
+        if decision == "modifier":
+            arguments = dict(arguments, date=input_date_modifiee())
             continue
-        donnees = ligne[6:]
-        if donnees == b"[DONE]":
-            break
-        chunk = json.loads(donnees)
-        delta = chunk.get("choices", [{}])[0].get("delta", {})
-        if delta.get("content"):
-            if premier_token is None:
-                premier_token = time.perf_counter() - debut
-            texte += delta["content"]
-            print(delta["content"], end="", flush=True)
-    total = time.perf_counter() - debut
-    print()
-    print(f"Premier token : {premier_token:.2f} s — réponse complète : {total:.2f} s")
-    return texte
+        return decision, arguments
+    return "non", arguments
 
 
-messages = [
-    {
-        "role": "user",
-        "content": "Quelle est la capitale du Japon ? Réponds en une phrase.",
-    }
-]
+def input_date_modifiee():
+    return "2026-08-26"
 
-texte = appeler_modele_stream_chrono(messages)
-print("Réponse finale :", texte.strip())
+
+def test_oui():
+    decision, arguments = demander_confirmation(
+        {"destination": "Lyon", "date": "2026-08-25"}, ["oui"]
+    )
+    assert decision == "oui"
+    assert arguments["date"] == "2026-08-25"
+    print("oui → exécute tel quel :", arguments)
+
+
+def test_non():
+    decision, arguments = demander_confirmation(
+        {"destination": "Lyon", "date": "2026-08-25"}, ["non"]
+    )
+    assert decision == "non"
+    print("non → annule :", arguments)
+
+
+def test_modifier():
+    decision, arguments = demander_confirmation(
+        {"destination": "Lyon", "date": "2026-08-25"}, ["modifier", "oui"]
+    )
+    assert decision == "oui"
+    assert arguments["date"] == "2026-08-26"
+    print("modifier → nouvelle date confirmée :", arguments)
+
+
+if __name__ == "__main__":
+    test_oui()
+    test_non()
+    test_modifier()
+    print("Trois chemins du garde d'approbation vérifiés.")
